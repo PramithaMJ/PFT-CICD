@@ -77,11 +77,19 @@ resource "aws_instance" "my_ec2_instance1" {
       host        = self.public_ip
     }
 
-    inline = [        
+    inline = [
       # wait for 200sec before EC2 initialization
       "sleep 200",
       # Install Git 
       "sudo yum install git -y",
+
+      # Install Node.js and npm
+      # REF: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-up-node-on-ec2-instance.html
+      "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash",
+      "source ~/.bashrc",
+      "nvm install node",
+      "node -v",
+      "npm -v",
       
       # Install Jenkins 
       # REF: https://www.jenkins.io/doc/tutorials/tutorial-for-installing-jenkins-on-AWS/
