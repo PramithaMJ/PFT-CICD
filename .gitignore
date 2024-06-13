@@ -67,3 +67,6 @@ coverage
 /CICD files (DevOps)/PFT.pem
 /CICD files (DevOps)/.terraform
 /CICD files (DevOps)/.terraform.lock.hcl
+terraform_files/PFT.pem
+terraform_files/.terraform.lock.hcl
+terraform_files/terraform.tfstate
