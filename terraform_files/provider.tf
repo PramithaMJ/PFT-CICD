@@ -1,4 +1,4 @@
-#STEP1: DEFINE AWS VERSION
+#DEFINE AWS VERSION
 terraform {
   required_providers {
     aws = {

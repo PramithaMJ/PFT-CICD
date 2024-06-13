@@ -1,6 +1,6 @@
 # SERVER1: 'MASTER-SERVER' (with Jenkins, Docker, Ansible, Trivy)
-# STEP1: CREATING A SECURITY GROUP FOR JENKINS SERVER
-# Description: Allow SSH, HTTP, HTTPS, 8080, 8081
+# CREATING A SECURITY GROUP FOR JENKINS SERVER
+# Allow SSH, HTTP, HTTPS, 8080, 8081
 resource "aws_security_group" "my_security_group1" {
   name        = "my-security-group1"
   description = "Allow SSH, HTTP, HTTPS, 8080 for Jenkins "
@@ -50,9 +50,7 @@ resource "aws_security_group" "my_security_group1" {
   }
 }
 
-# STEP2: CREATE AN JENKINS EC2 INSTANCE USING EXISTING PEM KEY
-# Note: i. First create a pem-key manually from the AWS console
-#      ii. Copy it in the same directory as your terraform code
+# CREATE AN JENKINS EC2 INSTANCE USING EXISTING PEM KEY
 resource "aws_instance" "my_ec2_instance1" {
   ami                    = "ami-0cf10cdf9fcd62d37"
   instance_type          = "t2.medium"
@@ -69,7 +67,7 @@ resource "aws_instance" "my_ec2_instance1" {
     Name = "MASTER-SERVER"
   }
 
-  # STEP3: USING REMOTE-EXEC PROVISIONER TO INSTALL TOOLS
+  # USING REMOTE-EXEC PROVISIONER TO INSTALL TOOLS
   provisioner "remote-exec" {
     # ESTABLISHING SSH CONNECTION WITH EC2
     connection {
