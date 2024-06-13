@@ -1,137 +1,116 @@
-// JENKINS CI PIPELINE/
-//  Store Dockerhub, EC2 pem key credentials in Jenkins Server
-// Install 'ssh agent' plugin in Jenkins
-
 pipeline {
     agent any
-    // DECLARE THE VARIABLES HERE:
     environment {
-        DOCKER_USERNAME = "pramithamj"     // check the 'ID' in your Jenkins credentials
+        DOCKER_USERNAME = "pramithamj"
     }
 
     stages {
         stage("1. Cleanup") {
-            // Clean workspace directory for the current build
             steps {
-                deleteDir ()             
+                deleteDir()             
             }
         }
 
-        stage ('2. Git Checkout') {
-            // use pipeline syntax generator to generate below step
-            // 'Pipeline syntax' --> Steps 'Smaple step' --> git (enter url & branch & generate)
+        stage('2. Git Checkout') {
             steps {
-                
-                  script {
-                    git branch: 'main', url: 'https://github.com/PramithaMJ/Personal_Financial_Tracker_Web_App' 
-                  }
-                
+                script {
+                    git branch: 'main', url: 'https://github.com/PramithaMJ/PFT-CICD.git' 
+                }
             }
         }   
         
-        stage("3. Unit Test") {  
-            // Test the individual units of code 
+        stage('Node Build Backend') {
             steps{
-                dir ("backend"){
-                 echo 'Unit Test for Backend'       
+                dir("Backend"){
+                    sh '''
+                        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+                        export NVM_DIR="$HOME/.nvm"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  
+                        nvm install 14
+                        nvm use 14
+                        npm install
+                    '''
                 }
             }
         }
 
-        stage('4. Node Build') {
-            // Build the application into an executable file (.jar)
+        stage('Node Build Frontend') {
             steps{
-                dir ("backend"){
-                  sh 'npm install'   
-                }
-            }
-            steps{
-                dir ("frontend"){
-                  sh 'npm run build'   
-                }
-            }
-        }
-
-        stage("5.  Integration Test") {
-            //  Test the interaction between different units of code
-            steps{
-                dir ("backend"){
-                  echo 'Integration Test for DevopsProject1'         
+                dir("Frontend"){
+                    sh '''
+                        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+                        export NVM_DIR="$HOME/.nvm"
+                        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  
+                        nvm install 14
+                        nvm use 14
+                        npm install
+                    '''
                 }
             }
         }
-
-        stage('6. Docker Image Build') {
-            // Build Docker Image 
-            steps{
-                dir('backend') {      // go to directory where 'Dockerfile' is stored
-                    script {
-                      def JOB = env.JOB_NAME.toLowerCase()           // Convert Jenkins Job name to lower-case
-                      sh "docker build -t ${JOB}:${BUILD_NUMBER} ."  // 'JOB_NAME' & 'BUILD_NUMBER' are Jenkins Global variable
-                    }
-                }
-            }
-            steps{
-                dir('frontend') {      // go to directory where 'Dockerfile' is stored
-                    script {
-                      def JOB = env.JOB_NAME.toLowerCase()           // Convert Jenkins Job name to lower-case
-                      sh "docker build -t ${JOB}:${BUILD_NUMBER} ."  // 'JOB_NAME' & 'BUILD_NUMBER' are Jenkins Global variable
-                    }
-        }
-      }
         
-        stage('7. Docker Image Tag') {
-            // Rename the Docker Image before pushing to Dockerhub
+        stage("Integration Test") {
             steps{
-                dir('backend') {      // go to directory where Docker Image is created
-                  script {
-                    def JOB = env.JOB_NAME.toLowerCase() // Convert Jenkins Job name to lower-case
-                    sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER}"
-                    sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:latest"
-                  }
+                dir("Backend"){
+                    echo 'Integration Test for DevopsProject1'         
+                }
+            }
+        }
+
+        stage('Docker Image Build') {
+            steps{
+                dir('Backend') {
+                    script {
+                        def JOB = env.JOB_NAME.toLowerCase()
+                        sh "docker build -t ${JOB}:${BUILD_NUMBER} ."
+                    }
+                }
+                dir('Frontend') {
+                    script {
+                        def JOB = env.JOB_NAME.toLowerCase()
+                        sh "docker build -t ${JOB}:${BUILD_NUMBER} ."
+                    }
+                }
+            }
+        }
+
+        stage('7. Docker Image Tag') {
+            steps{
+                dir('Backend') {
+                    script {
+                        def JOB = env.JOB_NAME.toLowerCase()
+                        sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER}"
+                        sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:latest"
+                    }
+                }
+                dir('Frontend') {
+                    script {
+                        def JOB = env.JOB_NAME.toLowerCase()
+                        sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER}"
+                        sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:latest"
+                    }
                 }
             } 
-
-            steps{
-                dir('frontend') {      // go to directory where Docker Image is created
-                  script {
-                    def JOB = env.JOB_NAME.toLowerCase() // Convert Jenkins Job name to lower-case
-                    sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER}"
-                    sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:latest"
-                  }
-                }
-            }
         }
 
         stage('8. Trivy Image Scan') {
-            // Scan Docker images for vulnerabilities 
             steps{
                 script { 
-                  def JOB = env.JOB_NAME.toLowerCase() // Convert Jenkins Job name to lower-case
-                  sh "trivy image ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER} > scan.txt"
+                    def JOB = env.JOB_NAME.toLowerCase()
+                    sh "trivy image ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER} > scan.txt"
                 }
             }
         }
 
         stage('9. Docker Image Push') {
-            // Login to Dockerhub & Push the image to Dockerhub
             steps{
                 script { 
-                  withCredentials([usernamePassword(credentialsId: 'my_dockerhub_creds', usernameVariable: 'docker_user', passwordVariable: 'docker_pass')]) {
-                    sh "docker login -u '${docker_user}' -p '${docker_pass}'"
-                    def JOB = env.JOB_NAME.toLowerCase() // Convert Jenkins Job name to lower-case
-                    sh "docker push ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER}"
-                    sh "docker push ${DOCKER_USERNAME}/${JOB}:latest"
-                  }
-                }
-            }
-        }
-
-        stage('10. Docker Image Cleanup') {
-            // Remove the unwanted (dangling) images created in Jenkins Server to free-up space
-            steps{
-                script { 
-                  sh "docker image prune -af"
+                    withCredentials([usernamePassword(credentialsId: 'hub_creds', usernameVariable: 'docker_user', passwordVariable: 'docker_pass')]) {
+                        sh "docker login -u '${docker_user}' -p '${docker_pass}'"
+                        def JOB = env.JOB_NAME.toLowerCase()
+                        sh "docker push ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER}"
+                        sh "docker push ${DOCKER_USERNAME}/${JOB}:latest"
+                    }
                 }
             }
         }
