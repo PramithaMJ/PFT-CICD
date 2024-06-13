@@ -1,5 +1,6 @@
 pipeline {
     agent any
+    
     environment {
         DOCKER_USERNAME = "pramithamj"
     }
@@ -20,8 +21,8 @@ pipeline {
         }   
         
         stage('Node Build Backend') {
-            steps{
-                dir("Backend"){
+            steps {
+                dir("Backend") {
                     sh '''
                         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
                         export NVM_DIR="$HOME/.nvm"
@@ -35,8 +36,8 @@ pipeline {
         }
 
         stage('Node Build Frontend') {
-            steps{
-                dir("Frontend"){
+            steps {
+                dir("frontend") {
                     sh '''
                         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
                         export NVM_DIR="$HOME/.nvm"
@@ -50,68 +51,78 @@ pipeline {
         }
         
         stage("Integration Test") {
-            steps{
-                dir("Backend"){
+            steps {
+                dir("Backend") {
                     echo 'Integration Test for DevopsProject1'         
                 }
             }
         }
 
         stage('Docker Image Build') {
-            steps{
+            steps {
                 dir('Backend') {
                     script {
                         def JOB = env.JOB_NAME.toLowerCase()
-                        sh "docker build -t ${JOB}:${BUILD_NUMBER} ."
+                        sh "docker build -t ${DOCKER_USERNAME}/pft-ci-backend:${BUILD_NUMBER} ."
                     }
                 }
-                dir('Frontend') {
+                dir('frontend') {
                     script {
                         def JOB = env.JOB_NAME.toLowerCase()
-                        sh "docker build -t ${JOB}:${BUILD_NUMBER} ."
+                        sh "docker build -t ${DOCKER_USERNAME}/pft-ci-frontend:${BUILD_NUMBER} ."
                     }
                 }
             }
         }
 
-        stage('7. Docker Image Tag') {
-            steps{
+        stage('Docker Image Tag') {
+            steps {
                 dir('Backend') {
                     script {
                         def JOB = env.JOB_NAME.toLowerCase()
-                        sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER}"
-                        sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:latest"
+                        sh "docker tag ${DOCKER_USERNAME}/pft-ci-backend:${BUILD_NUMBER} ${DOCKER_USERNAME}/pft-ci-backend:v${BUILD_NUMBER}"
+                        sh "docker tag ${DOCKER_USERNAME}/pft-ci-backend:${BUILD_NUMBER} ${DOCKER_USERNAME}/pft-ci-backend:latest"
                     }
                 }
-                dir('Frontend') {
+                dir('frontend') {
                     script {
                         def JOB = env.JOB_NAME.toLowerCase()
-                        sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER}"
-                        sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:latest"
+                        sh "docker tag ${DOCKER_USERNAME}/pft-ci-frontend:${BUILD_NUMBER} ${DOCKER_USERNAME}/pft-ci-frontend:v${BUILD_NUMBER}"
+                        sh "docker tag ${DOCKER_USERNAME}/pft-ci-frontend:${BUILD_NUMBER} ${DOCKER_USERNAME}/pft-ci-frontend:latest"
                     }
                 }
             } 
         }
 
-        stage('8. Trivy Image Scan') {
-            steps{
+        stage('Trivy Image Scan') {
+            steps {
                 script { 
                     def JOB = env.JOB_NAME.toLowerCase()
-                    sh "trivy image ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER} > scan.txt"
+                    sh "trivy image ${DOCKER_USERNAME}/pft-ci-backend:v${BUILD_NUMBER} > backend_scan.txt"
+                    sh "trivy image ${DOCKER_USERNAME}/pft-ci-frontend:v${BUILD_NUMBER} > frontend_scan.txt"
                 }
             }
         }
 
-        stage('9. Docker Image Push') {
-            steps{
+        stage('Docker Image Push') {
+            steps {
                 script { 
                     withCredentials([usernamePassword(credentialsId: 'hub_creds', usernameVariable: 'docker_user', passwordVariable: 'docker_pass')]) {
                         sh "docker login -u '${docker_user}' -p '${docker_pass}'"
-                        def JOB = env.JOB_NAME.toLowerCase()
-                        sh "docker push ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER}"
-                        sh "docker push ${DOCKER_USERNAME}/${JOB}:latest"
+                        sh "docker push ${DOCKER_USERNAME}/pft-ci-backend:v${BUILD_NUMBER}"
+                        sh "docker push ${DOCKER_USERNAME}/pft-ci-backend:latest"
+                        sh "docker push ${DOCKER_USERNAME}/pft-ci-frontend:v${BUILD_NUMBER}"
+                        sh "docker push ${DOCKER_USERNAME}/pft-ci-frontend:latest"
                     }
                 }
+            }
+        }
+        stage('Cleanup Local Images') {
+            steps {
+                sh "docker rmi ${DOCKER_USERNAME}/pft-ci-backend:v${BUILD_NUMBER}"
+                sh "docker rmi ${DOCKER_USERNAME}/pft-ci-backend:latest"
+                sh "docker rmi ${DOCKER_USERNAME}/pft-ci-frontend:v${BUILD_NUMBER}"
+                sh "docker rmi ${DOCKER_USERNAME}/pft-ci-frontend:latest"
             }
         }
     }
