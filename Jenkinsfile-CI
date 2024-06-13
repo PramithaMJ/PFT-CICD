@@ -1,8 +1,6 @@
 // JENKINS CI PIPELINE/
-// Purpose: The Code will be built into executable file (.jar) & pushed to Dockerhub
-// NOTE:
-//  i. Store Dockerhub, EC2 pem key credentials in Jenkins Server
-// ii. Install 'ssh agent' plugin in Jenkins
+//  Store Dockerhub, EC2 pem key credentials in Jenkins Server
+// Install 'ssh agent' plugin in Jenkins
 
 pipeline {
     agent any
@@ -23,37 +21,42 @@ pipeline {
             // use pipeline syntax generator to generate below step
             // 'Pipeline syntax' --> Steps 'Smaple step' --> git (enter url & branch & generate)
             steps {
-                dir ("DevopsProject1"){
+                
                   script {
-                    git branch: 'main', url: 'https://github.com/pandacloud1/DevopsProject1.git' 
+                    git branch: 'main', url: 'https://github.com/PramithaMJ/Personal_Financial_Tracker_Web_App' 
                   }
-                }
+                
             }
         }   
         
-        stage("3. Maven Unit Test") {  
+        stage("3. Unit Test") {  
             // Test the individual units of code 
             steps{
-                dir ("DevopsProject1"){
-                  sh 'mvn test'        
+                dir ("backend"){
+                 echo 'Unit Test for Backend'       
                 }
             }
         }
 
-        stage('4. Maven Build') {
+        stage('4. Node Build') {
             // Build the application into an executable file (.jar)
             steps{
-                dir ("DevopsProject1"){
-                  sh 'mvn clean install'   
+                dir ("backend"){
+                  sh 'npm install'   
+                }
+            }
+            steps{
+                dir ("frontend"){
+                  sh 'npm run build'   
                 }
             }
         }
 
-        stage("5. Maven Integration Test") {
+        stage("5.  Integration Test") {
             //  Test the interaction between different units of code
             steps{
-                dir ("DevopsProject1"){
-                  sh 'mvn verify'          
+                dir ("backend"){
+                  echo 'Integration Test for DevopsProject1'         
                 }
             }
         }
@@ -61,19 +64,26 @@ pipeline {
         stage('6. Docker Image Build') {
             // Build Docker Image 
             steps{
-                dir('DevopsProject1') {      // go to directory where 'Dockerfile' is stored
+                dir('backend') {      // go to directory where 'Dockerfile' is stored
                     script {
                       def JOB = env.JOB_NAME.toLowerCase()           // Convert Jenkins Job name to lower-case
                       sh "docker build -t ${JOB}:${BUILD_NUMBER} ."  // 'JOB_NAME' & 'BUILD_NUMBER' are Jenkins Global variable
                     }
                 }
             }
+            steps{
+                dir('frontend') {      // go to directory where 'Dockerfile' is stored
+                    script {
+                      def JOB = env.JOB_NAME.toLowerCase()           // Convert Jenkins Job name to lower-case
+                      sh "docker build -t ${JOB}:${BUILD_NUMBER} ."  // 'JOB_NAME' & 'BUILD_NUMBER' are Jenkins Global variable
+                    }
         }
+      }
         
         stage('7. Docker Image Tag') {
             // Rename the Docker Image before pushing to Dockerhub
             steps{
-                dir('DevopsProject1') {      // go to directory where Docker Image is created
+                dir('backend') {      // go to directory where Docker Image is created
                   script {
                     def JOB = env.JOB_NAME.toLowerCase() // Convert Jenkins Job name to lower-case
                     sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER}"
@@ -81,6 +91,16 @@ pipeline {
                   }
                 }
             } 
+
+            steps{
+                dir('frontend') {      // go to directory where Docker Image is created
+                  script {
+                    def JOB = env.JOB_NAME.toLowerCase() // Convert Jenkins Job name to lower-case
+                    sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:v${BUILD_NUMBER}"
+                    sh "docker tag ${JOB}:${BUILD_NUMBER} ${DOCKER_USERNAME}/${JOB}:latest"
+                  }
+                }
+            }
         }
 
         stage('8. Trivy Image Scan') {

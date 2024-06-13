@@ -136,12 +136,12 @@ resource "aws_instance" "my_ec2_instance2" {
   
 }
 
-# STEP3: OUTPUT PUBLIC IP OF EC2 INSTANCE
+# OUTPUT PUBLIC IP OF EC2 INSTANCE
 output "NODE_SERVER_PUBLIC_IP" {
   value = aws_instance.my_ec2_instance2.public_ip
 }
 
-# STEP4: OUTPUT PRIVATE IP OF EC2 INSTANCE
+# OUTPUT PRIVATE IP OF EC2 INSTANCE
 output "NODE_SERVER_PRIVATE_IP" {
   value = aws_instance.my_ec2_instance2.private_ip
 }
