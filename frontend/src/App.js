@@ -50,6 +50,7 @@ function App() {
     }
   `;
 
+  // Function to display the data based on the active state
   const displayData = () => {
     switch (active) {
       case 1:
