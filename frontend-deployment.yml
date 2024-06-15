@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: pramithamj/pft-ci-frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: FIREBASE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: firebase-secret
+                  key: FIREBASE_API_KEY
+            - name: FIREBASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: firebase-secret
+                  key: FIREBASE_PASSWORD
+          volumeMounts:
+            - mountPath: /app/src
+              name: frontend-src
+      volumes:
+        - name: frontend-src
+          persistentVolumeClaim:
+            claimName: frontend-src-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: frontend-src-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector:
+    app: frontend
