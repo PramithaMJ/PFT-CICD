@@ -1,5 +1,126 @@
 # Personal Finance Tracker
 
+# Project Deployment on Kubernetes Cluster using Jenkins CI/CD Pipeline with Terraform and Ansible
+
+This project sets up an automated CI/CD pipeline using Jenkins, Terraform, AWS, Docker, and Kubernetes. When you commit code to this repository, it triggers the CI pipeline on the Jenkins server, which builds the application, creates a Docker image, and pushes it to Docker Hub. Subsequently, the CD pipeline deploys the application on a Kubernetes cluster.
+
+## Prerequisites
+
+- AWS account
+- Terraform installed
+- Docker installed
+- Jenkins installed
+- Kubernetes cluster (Minikube or a cloud provider)
+- Git installed
+
+## Steps to Setup
+
+### 1. Clone the Repository
+
+```sh
+git clone <repository_url>
+cd <repository_name>
+```
+### 2. Setup Terraform
+
+Terraform scripts are provided to automate the creation of EC2 instances, and the installation of Jenkins and Kubernetes (master and node servers).
+
+#### Initialize Terraform
+
+```sh
+terraform init
+```
+
+#### Apply Terraform Configuration
+
+```sh
+terraform apply
+```
+
+Follow the prompts to confirm the action. This will create the necessary EC2 instances and set up Jenkins and Kubernetes.
+
+### 3. Jenkins Configuration
+
+1. Access the Jenkins server using the public IP of the EC2 instance where Jenkins is installed.
+2. Install required plugins:
+    - Kubernetes plugin
+    - Docker plugin
+    - Git plugin
+3. Configure Jenkins credentials:
+    - AWS credentials
+    - Docker Hub credentials
+4. Set up Jenkins pipeline jobs for CI and CD.
+
+### 4. Create Docker Image and Push to Docker Hub
+
+1. Jenkins CI pipeline will be triggered on code commit.
+2. It will build the application and create a Docker image.
+3. The image will be tagged and pushed to Docker Hub.
+
+### 5. Deploy Application to Kubernetes
+
+1. Jenkins CD pipeline will be triggered after the Docker image is pushed.
+2. It will pull the latest Docker image from Docker Hub.
+3. Deploy the application on the Kubernetes cluster using `kubectl`.
+
+### 6. Git Repository Configuration
+
+Ensure your repository has the following structure and scripts:
+
+```
+.
+├── Jenkinsfile
+├── terraform
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── outputs.tf
+│   └── scripts
+│       ├── install_jenkins.sh
+│       └── install_k8s.sh
+├── k8s
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   └── ingress.yaml
+├── src
+│   └── your_application_code
+└── Dockerfile
+```
+
+### Jenkins file CI and CD Pipeline
+
+### Dockerfile For Building Docker Image
+
+###  Kubernetes YAML Files
+
+#### deployment.yaml
+
+#### service.yaml
+
+#### ingress.yaml
+
+
+## Conclusion
+
+Following these steps, you will have a fully automated CI/CD pipeline that builds
+tests, and deploys your application on a Kubernetes cluster. Ensure to replace placeholders like `<repository_url>`, `your_dockerhub_username`, and `your_repository_name` with actual values specific to your setup.
+
+Jenkins CI Pipeline
+![Screenshot 2024-06-16 at 3.23.01 AM.png](..%2FScreenshot%202024-06-16%20at%203.23.01%E2%80%AFAM.png)
+
+Jenkins CD Pipeline
+![Screenshot 2024-06-16 at 3.23.32 AM.png](..%2FScreenshot%202024-06-16%20at%203.23.32%E2%80%AFAM.png)
+
+
+
+
+
+
+
+
+
+
+
+
 ## Table of Contents
 - [About](#about)
 - [Features](#features)
