@@ -1,6 +1,6 @@
 // JENKINS CD PIPELINE
-// Here the image stored in Dockerhub will be deployed using K8s
-// IMP NOTE: Store your EC2 instance username & key in Jenkins credentials
+//  image stored in Dockerhub will be deployed using K8s
+// Store your EC2 instance username & key in Jenkins credentials
 
 pipeline {
     agent any
@@ -8,8 +8,8 @@ pipeline {
     environment {
     NODE_IP = '172.31.49.21'   //  Node-Server private IP here
     EC2_NAME = "ec2-user"                  //  AWS EC2 username
-    PIPELINE_NAME = "PFT-CI-PIPLINE"          //  pipeline name here
-    PROJECT_NAME = "PFT-DevOps"        //  project name here
+    PIPELINE_NAME = "PFT-CI-PIPLINE"          //  pipeline name
+    PROJECT_NAME = "PFT-DevOps"        //  project name
     }
 
     stages {
